@@ -23,18 +23,55 @@ deliberately don't spawn one.
 
 | Feature | In game |
 |---|---|
-| **Chest sorting** | The golem gathers like items together. It carries up to 16 of a stack out of a chest where it doesn't belong and into the chest that already holds the most of that item — so each item type congregates in one chest. When there's nothing to move between chests, it **compacts the partial stacks within each chest** into the fewest stacks. It opens the chest (animated lid) and you can see the item in its hand as it carries it. |
+| **Chest sorting** | Keeps the chests around it organised: it gathers each item into the chest that already holds the **most** of it, then physically rearranges every chest into **creative-inventory order** (like items together, families grouped), merging partial stacks. A large **double chest** is treated as one. You can watch it open the lid and carry each stack by hand. **→ [How the sorting works](#how-the-sorting-works).** |
 | **Oxidation** | Visually ages normal → exposed → weathered → oxidized over time (default **20 min/stage**, configurable). Each stage is **slower** (100% / 75% / 50% / frozen); a fully oxidized golem seizes up. Irreversible by time, like Minecraft. |
 | **De-oxidation (axe)** | **Right-click** with an **axe** to scrape it back one stage (strips wax first). Stars sparkle; it costs one axe durability; it never deals damage. |
 | **Waxing (honeycomb)** | Right-click with a **honeycomb** to permanently halt oxidation at the current stage. |
 | **Lightning** | A lightning strike purges **all** oxidation back to pristine and briefly hyper-charges its speed. |
 | **Killable** | It has HP and can be fought like an iron golem — about **7 diamond-sword hits** (other weapons scale by their damage). On death it drops a few copper ingots plus whatever it was carrying. It takes **no fall damage**. |
 | **Water** | It won't walk off dry land into water, but if it ends up submerged it trudges along the bottom (it never drowns). Standing in water makes it oxidise faster — unless waxed. |
-| **Wandering** | Between chest trips it strolls and idles, occasionally turning its head to look around. It climbs 1-block steps and sidesteps simple obstacles; it can't pathfind through mazes. |
+| **Wandering** | Between chest trips it strolls and idles, occasionally turning its head to look around, climbing 1-block steps along the way. |
+| **Pathfinding** | When heading to a chest it uses the engine's A* pathfinder (the same one Mineclonia's mobs/villagers use) to route **around** walls. If a chest is sealed off with no way to it, the golem gives up at once and looks for other work instead of grinding against the wall. |
 
-**Sorting safety:** items with wear, metadata, or a max stack of 1 (tools,
-named/damaged gear) are never touched. If the golem can't reach a chest, it
-tucks the item into the nearest one rather than dropping it on the floor.
+## How the sorting works
+
+Spawn a golem near your storage and it quietly keeps the chests around it tidy.
+There is nothing to configure in game — just build it and let it work.
+
+**It tends one room.** A golem only looks for chests within about **8 nodes** of
+itself (roughly one large room) and never carries items between rooms, so each
+golem keeps its own area in order. Put a golem in each storage room.
+
+**The fullest chest wins.** For every kind of item, the chest that already holds
+the **most** of that item becomes its **home**. The golem carries that item out
+of the other nearby chests and into its home, so each kind ends up gathered in
+one place. **This is how you steer it:** to choose where something lives, just
+make sure the biggest pile of it is in the chest you want. Drop a stack of
+cobblestone in your "stone" chest and the golem will bring all the loose
+cobblestone there. (If a home chest fills up, the overflow simply stays put.)
+
+**Inside each chest it sorts like the creative menu.** Once items are gathered,
+the golem physically rearranges each chest — picking stacks up one at a time, so
+you can watch it — until identical items sit next to each other and whole
+families are grouped together (all the stones, all the seeds), in the same order
+as Mineclonia's creative inventory. Partial stacks of the same item are merged.
+
+**Double chests count as one.** A large (double) chest is organised as a single
+54-slot grid, not two separate halves.
+
+**What it leaves alone, and never loses.** Tools, damaged gear, and anything with
+a custom name or metadata are never moved or merged — only ordinary stackable
+items are sorted. Nothing is destroyed: if the golem can't reach a chest, it
+tucks the carried item into the nearest one instead of dropping it on the floor.
+
+**Tips**
+
+- Want to move an item's "home"? Put a bigger pile of it in the chest you prefer
+  (or empty the current home), and the golem re-homes it on its next round.
+- Keep the chests you want sorted within ~8 nodes of where the golem roams; raise
+  `chest_radius` (see [Tuning](#tuning)) if your room is larger.
+- One golem per room is plenty. They settle down and stop pacing once everything
+  is tidy, and perk back up when you add or disturb items.
 
 ## Install
 
@@ -81,8 +118,10 @@ copper_golem/
 Edit the `config` table at the top of `init.lua`:
 
 - `seconds_per_stage = 1200` — oxidation pace; drop to e.g. `30` to watch it age.
-- `chest_radius = 8` — how far it looks for chests to sort.
-- `organize_cooldown = 12` — seconds between sort trips.
+- `chest_radius = 8` — how far it looks for chests to sort (kept small so it stays within one room rather than couriering items between rooms).
+- `organize_cooldown = 6` — seconds between sort trips.
+- `path_recheck = 1.5` — seconds between recomputing the route to a chest.
+- `unreachable_ttl = 20` — seconds it ignores a chest it couldn't path to.
 - `chest_dwell`, `seek_timeout`, `walk_speed` / `seek_speed`, idle/walk burst times.
 
 Combat/visual tunables live next to their code: `hp_max` (entity properties),

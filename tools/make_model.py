@@ -18,7 +18,9 @@ Output scale: 1 px = 0.625 b3d units, so the 16 px body height = 10 units
 
 Animation (24 fps): frames 1..21 = walk cycle (frame 1 = rest/stand pose; legs
 swing +-35 deg about X, arms +-20 deg opposite phase); frames 31..91 = idle
-"look" cycle (head yaws +-34 deg about Y, the rest of the body at rest).
+"look" cycle (head turns AND nods -- wide yaw plus up/down pitch, iron-golem
+style); frames 101..104 = four held statue poses (head tilt + arm gestures) the
+frozen, fully-oxidized golem seizes up in -- played one frame at a time.
 
 Run:  python3 make_model.py   (writes ../models/copper_golem.b3d)
 """
@@ -114,19 +116,94 @@ def quat_y(angle):
     """Quaternion for rotation about Y (yaw), b3d storage order (w,x,y,z)."""
     return (math.cos(angle/2), 0.0, math.sin(angle/2), 0.0)
 
-REST = quat_x(0.0)
-LOOK_AMP = math.radians(34)        # head yaw sweep for the occasional idle "look"
+def quat_z(angle):
+    """Quaternion for rotation about Z (roll), b3d storage order (w,x,y,z)."""
+    return (math.cos(angle/2), 0.0, 0.0, math.sin(angle/2))
 
-# Two clips share one 1-indexed timeline (B3D frame 0 => Irrlicht "Illegal frame"):
-#   WALK  frames 1..21   legs/arms swing about X; head + torso stay at rest
-#   LOOK  frames 31..91  head yaws L->R->L (its children nose/antenna ride along);
-#                        legs/arms/torso hold rest
-# Frame 1 (walk phase 0.0) doubles as the stand pose. A rest key at frame 31 on
-# the head keeps it still through the whole walk clip so the clips never bleed;
-# the legs hold their frame-21 pose (phase 0 = rest) all through the look clip.
-FRAMES = 91
+def quat_mul(a, b):
+    """Hamilton product a*b, storage order (w,x,y,z). Applies b then a."""
+    w1, x1, y1, z1 = a
+    w2, x2, y2, z2 = b
+    return (
+        w1*w2 - x1*x2 - y1*y2 - z1*z2,
+        w1*x2 + x1*w2 + y1*z2 - z1*y2,
+        w1*y2 - x1*z2 + y1*w2 + z1*x2,
+        w1*z2 + x1*y2 - y1*x2 + z1*w2,
+    )
+
+def euler(pitch=0.0, yaw=0.0, roll=0.0):
+    """Compose an orientation from degrees: pitch about X (nod up-/down),
+    yaw about Y (turn left/right), roll about Z (arm swings out to the side)."""
+    return quat_mul(quat_mul(quat_y(math.radians(yaw)),
+                             quat_x(math.radians(pitch))),
+                    quat_z(math.radians(roll)))
+
+REST = quat_x(0.0)
+
+# Clips share one 1-indexed timeline (B3D frame 0 => Irrlicht "Illegal frame"):
+#   WALK  frames 1..21    legs/arms swing about X; head + torso stay at rest
+#   LOOK  frames 31..91   head turns AND nods -- wide left/right yaw plus up/down
+#                         pitch, iron-golem style (children nose/antenna ride
+#                         along); legs/arms/torso hold rest
+#   POSE  frames 101..104 four held statue poses for the frozen (fully-oxidized)
+#                         golem -- head tilt + arm gestures, played one frame at a
+#                         time (self._pose in init.lua picks 101+(n-1))
+# Frame 1 (walk phase 0.0) doubles as the stand pose; the head's frame-31 key is
+# rest, holding it still through the walk clip so the clips never bleed.
+FRAMES = 104
 WALK_KEYF = [(1, 0.0), (6, 1.0), (11, 0.0), (16, -1.0), (21, 0.0)]
-LOOK_KEYF = [(31, 0.0), (46, 1.0), (61, 0.0), (76, -1.0), (91, 0.0)]
+
+# Head idle "look": (frame, yaw deg, pitch deg). Wide sweep -- glances up to the
+# left, down at centre, up to the right, then settles. SIGN CONVENTION (Irrlicht
+# renders left-handed; verified in-game June 19): +pitch tips the snout UP (look
+# above), -pitch tips it DOWN (look below); +yaw turns left, -yaw turns right.
+LOOK_HEAD = [
+    (31,   0,   0),
+    (43,  46,  24),   # turn left, look up
+    (55,   0, -18),   # centre, look down
+    (67, -46,  26),   # turn right, look up
+    (79, -20,  -8),   # slight right, slight down
+    (91,   0,   0),
+]
+
+# Four freeze poses, indexed 1..4, each a dict of bone -> orientation. Anything
+# unlisted holds REST (so the legs always stand). Tunable; arm "roll" swings the
+# arm out from the side (+ for arm_r, - for arm_l), "pitch" swings it forward.
+POSE_FRAMES = [101, 102, 103, 104]
+# SIGN CONVENTION (Irrlicht left-handed; verified in-game June 19):
+#   arm  pitch +=swing FORWARD, -=back;  roll: arm_r -=out to its side / up-out,
+#        +=in across the body (arm_l mirrored, + = out / up-out);
+#   head pitch +=look up, -=down;  yaw +=turn left, -=right;  roll +=tilt right;
+#   torso pitch -=lean forward, +=lean back;  roll +=lean right.
+# Each pose makes the two arms do DIFFERENT things so none looks like both arms
+# pointing the same way.
+POSES = [
+    {   # 1. Hail -- right arm thrust up-and-out overhead, left arm hanging; head
+        # tipped up and turned toward the raised hand.
+        "arm_r": euler(roll=-150, pitch=10), "arm_l": euler(roll=12),
+        "head":  euler(pitch=22, yaw=-24), "torso": euler(roll=6),
+    },
+    {   # 2. Presenter -- right arm out to the side, left arm reaching forward;
+        # head bowed slightly and turned to the forward hand.
+        "arm_r": euler(roll=-88), "arm_l": euler(pitch=82),
+        "head":  euler(pitch=-10, yaw=16), "torso": euler(roll=5),
+    },
+    {   # 3. Reach-and-recoil -- right arm reaching forward, left arm flung back;
+        # head down-forward, torso leaning into the reach.
+        "arm_r": euler(pitch=90), "arm_l": euler(pitch=-48),
+        "head":  euler(pitch=-16, yaw=-10), "torso": euler(pitch=-9),
+    },
+    {   # 4. Jaunty -- right arm cocked up-and-out, left arm held OUT to its own
+        # side (never across the front); head cocked with a matching torso roll.
+        # NB: arm_l roll must stay POSITIVE here -- a negative roll swings the left
+        # arm inward across the groin, which read as an obscene gesture in-game.
+        "arm_r": euler(roll=-120, pitch=14), "arm_l": euler(roll=34),
+        "head":  euler(yaw=18, roll=12, pitch=6), "torso": euler(roll=8),
+    },
+]
+
+def pose_keys(bone):
+    return [(fr, pose.get(bone, REST)) for fr, pose in zip(POSE_FRAMES, POSES)]
 
 def bone_keys(bone):
     if bone in ("leg_l", "leg_r", "arm_l", "arm_r"):
@@ -134,12 +211,12 @@ def bone_keys(bone):
         sign = 1 if bone in ("leg_l", "arm_r") else -1
         keys = [(f, quat_x(sign * amp * ph)) for f, ph in WALK_KEYF]
         keys.append((91, REST))                 # hold rest across the look clip
-        return keys
+        return keys + pose_keys(bone)
     if bone == "head":
-        keys = [(1, REST), (31, REST)]          # rest through the walk clip
-        keys += [(f, quat_y(LOOK_AMP * ph)) for f, ph in LOOK_KEYF[1:]]
-        return keys
-    return [(1, REST), (91, REST)]              # torso: rest the whole timeline
+        keys = [(1, REST)]                      # rest through the walk clip
+        keys += [(f, euler(pitch=p, yaw=y)) for f, y, p in LOOK_HEAD]
+        return keys + pose_keys(bone)
+    return [(1, REST), (91, REST)] + pose_keys(bone)  # torso
 
 # ------------------------------------------------------------- b3d writing --
 def cstr(s): return s.encode() + b"\0"
