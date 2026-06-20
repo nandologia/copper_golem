@@ -73,15 +73,6 @@ tucks the carried item into the nearest one instead of dropping it on the floor.
 - One golem per room is plenty. They settle down and stop pacing once everything
   is tidy, and perk back up when you add or disturb items.
 
-## Install
-
-1. Drop this folder into your Mineclonia world's `mods/`. The mod name is
-   `copper_golem`, so name the folder **`copper_golem`** — if you cloned the
-   `mcl_copper_golem` repo, rename the folder to `copper_golem`.
-2. Enable **Copper Golem** in the world's mod configuration.
-3. Restart Luanti fully (models and textures only load at startup); reconnect
-   if you're on a server so the client fetches the model/textures.
-
 ## How it's built
 
 The mesh and textures are **generated**, not hand-drawn, by two scripts in
