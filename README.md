@@ -1,7 +1,7 @@
 # Copper Golem (for Mineclonia)
 
 A self-contained [Luanti](https://www.luanti.org/) mod that adds a
-Minecraft-style **Copper Golem** to **Mineclonia** — a build-to-spawn worker
+**Copper Golem** to **Mineclonia** — a build-to-spawn worker
 that sorts your chests, oxidises over time, and can be scraped, waxed,
 zapped, and (if you must) fought.
 
@@ -24,7 +24,7 @@ deliberately don't spawn one.
 | Feature | In game |
 |---|---|
 | **Chest sorting** | Keeps the chests around it organised: it gathers each item into the chest that already holds the **most** of it, then physically rearranges every chest into **creative-inventory order** (like items together, families grouped), merging partial stacks. A large **double chest** is treated as one. You can watch it open the lid and carry each stack by hand. **→ [How the sorting works](#how-the-sorting-works).** |
-| **Oxidation** | Visually ages normal → exposed → weathered → oxidized over time (default **20 min/stage**, configurable). Each stage is **slower** (100% / 75% / 50% / frozen); a fully oxidized golem seizes up. Irreversible by time, like Minecraft. |
+| **Oxidation** | Visually ages normal → exposed → weathered → oxidized over time (default **20 min/stage**, configurable). Each stage is **slower** (100% / 75% / 50% / frozen); a fully oxidized golem seizes up. Irreversible by time. |
 | **De-oxidation (axe)** | **Right-click** with an **axe** to scrape it back one stage (strips wax first). Stars sparkle; it costs one axe durability; it never deals damage. |
 | **Waxing (honeycomb)** | Right-click with a **honeycomb** to permanently halt oxidation at the current stage. |
 | **Lightning** | A lightning strike purges **all** oxidation back to pristine and briefly hyper-charges its speed. |
@@ -135,7 +135,6 @@ held-item hand offset (`HELD_OFFSET` / `HELD_ROT`).
   `mcl_copper` block textures by **NO11**, based on the **Pixel Perfection**
   pack by **XSSheep**. Full per-file breakdown in
   [`LICENSE-media.md`](LICENSE-media.md).
-- No Minecraft/Mojang assets are included; the golem is original art inspired by
-  the Minecraft concept.
+- No proprietary game assets are included; the golem is entirely original art.
 
 Built with [Claude Code](https://claude.com/claude-code).

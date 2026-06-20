@@ -29,6 +29,5 @@ them, are by **NO11** and are based on the **Pixel Perfection** resource pack by
 ## Note on the model
 
 `models/copper_golem.b3d` is **original geometry** generated from scratch by
-`tools/make_model.py` (a procedural box mesh — it does not copy any Mojang or
-Mineclonia model file). The *concept* of a copper golem is from Minecraft, but
-no Minecraft assets are included in this mod.
+`tools/make_model.py` (a procedural box mesh — it does not copy any other
+game's model file). No proprietary game assets are included in this mod.

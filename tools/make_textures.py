@@ -10,7 +10,7 @@ gradient overlay (body^eyes, combined in-engine).
 
 Source blocks are Mineclonia's, by NO11 (GPL / CC BY-SA -- credit + share-alike
 when publishing; bundled in tools/copper_src so this script is self-contained).
-The output atlases are therefore derivative of CC BY-SA art, NOT of Mojang's.
+The output atlases are therefore derivative of that CC BY-SA art.
 
 It mirrors the EXACT UV atlas baked by tools/make_model.py: the PARTS table and
 box-unwrap math below are copied from it and MUST stay in sync (change a part's

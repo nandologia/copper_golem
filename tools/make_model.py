@@ -2,7 +2,7 @@
 """Generate models/copper_golem.b3d -- the copper golem mesh + walk animation.
 
 The geometry and UV layout are derived from the provided 64x64 texture atlas
-(standard Minecraft entity unwrap: top/bottom on the first row, then
+(standard box-model entity unwrap: top/bottom on the first row, then
 right/front/left/back). Parts (pixel units, 16 px = 1 node):
 
     head   8w x 5h x 10d  uv(0,0)     bone "head"
