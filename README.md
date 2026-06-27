@@ -1,7 +1,7 @@
-# Copper Golem (for Mineclonia)
+# Copper Golem (for Mineclonia and Voxelibre)
 
 A self-contained [Luanti](https://www.luanti.org/) mod that adds a
-**Copper Golem** to **Mineclonia** — a build-to-spawn worker
+**Copper Golem** to **Mineclonia** and **Voxelibre** — a build-to-spawn worker
 that sorts your chests, oxidises over time, and can be scraped, waxed,
 zapped, and (if you must) fought.
 
