@@ -1,6 +1,8 @@
 Place a **copper block**, put a **carved pumpkin** on top, and watch a Copper Golem spring to life in a burst of sparks — then leave it alone. It will sort your chests for you.
 
-## What it does
+---
+
+**What it does**
 
 The golem roams the chests near it (within one room) and keeps them organised, automatically and continuously. You don't configure anything in game. Just build it and walk away.
 
@@ -14,7 +16,9 @@ The golem roams the chests near it (within one room) and keeps them organised, a
 
 **It never loses items.** Tools, enchanted gear, and anything with custom metadata are never touched. If a chest becomes unreachable, the golem stashes what it's carrying in the nearest available chest instead of dropping it.
 
-## It also ages
+---
+
+**It also ages**
 
 The golem oxidises over time, just like copper in the world — visually changing from bright copper through exposed and weathered to fully oxidised, growing slower at each stage until it freezes into a statue. You control this:
 
@@ -24,11 +28,15 @@ The golem oxidises over time, just like copper in the world — visually changin
 
 The oxidation stage of the copper block you build with is the stage the golem starts at. Build with a weathered block to get a weathered golem right away.
 
-## Combat
+---
+
+**Combat**
 
 It has HP and fights back like an iron golem — about seven diamond-sword hits to kill. On death it drops a few copper ingots plus whatever it was carrying at the time. It takes no fall damage.
 
-## Tips
+---
+
+**Tips**
 
 - One golem per room is plenty. It settles down once everything is tidy and perks back up when you add items.
 - To redirect where an item lives: put a bigger pile of it in your preferred chest (or empty the current home). The golem re-homes it on its next round.
