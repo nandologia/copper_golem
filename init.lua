@@ -1761,8 +1761,8 @@ local golem_def = {
 
 	-- Lightning purges ALL oxidation back to pristine and briefly hyper-charges
 	-- the golem ("atmospheric restoration"). Returning true skips the
-	-- default lightning damage. mcl_lightning calls this for any luaentity within
-	-- ~3.5 nodes of a strike. Wax (if any) is left intact, so it re-locks at clean.
+	-- default lightning damage. Mineclonia uses the underscore-prefixed name;
+	-- Voxelibre calls the non-prefixed name -- both are wired to the same handler.
 	_on_lightning_strike = function(self, _pos, _pos2, _objects)
 		self._stage = 1
 		self._age   = 0
@@ -1774,6 +1774,8 @@ local golem_def = {
 		return true
 	end,
 }
+-- Voxelibre's lightning mod calls on_lightning_strike (no leading underscore).
+golem_def.on_lightning_strike = golem_def._on_lightning_strike
 
 core.register_entity("copper_golem:golem", golem_def)
 
