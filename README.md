@@ -28,7 +28,7 @@ deliberately don't spawn one.
 | **De-oxidation (axe)** | **Right-click** with an **axe** to scrape it back one stage (strips wax first). Stars sparkle; it costs one axe durability; it never deals damage. |
 | **Waxing (honeycomb)** | Right-click with a **honeycomb** to permanently halt oxidation at the current stage. |
 | **Lightning** | A lightning strike purges **all** oxidation back to pristine and briefly hyper-charges its speed. |
-| **Killable** | It has HP and can be fought like an iron golem — about **7 diamond-sword hits** (other weapons scale by their damage). On death it drops a few copper ingots plus whatever it was carrying. It takes **no fall damage**. |
+| **Killable** | It has HP — about **7 diamond-sword hits** (other weapons scale by their damage). On death it drops one copper ingot plus whatever it was carrying. It takes **no fall damage**. |
 | **Water** | It won't walk off dry land into water, but if it ends up submerged it trudges along the bottom (it never drowns). Standing in water makes it oxidise faster — unless waxed. |
 | **Wandering** | Between chest trips it strolls and idles, occasionally turning its head to look around, climbing 1-block steps along the way. |
 | **Pathfinding** | When heading to a chest it uses the engine's A* pathfinder (the same one Mineclonia's mobs/villagers use) to route **around** walls. If a chest is sealed off with no way to it, the golem gives up at once and looks for other work instead of grinding against the wall. |
