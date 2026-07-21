@@ -31,6 +31,7 @@
 --     honeycomb     : mcl_honey:honeycomb
 --     chest inv     : core.get_inventory({type="node", pos=p}) -> list "main"
 --------------------------------------------------------------------------------
+---trying to MOD to looks similar or even BETTER than MCraft wrxxnch was here
 
 copper_golem = {}
 
@@ -56,6 +57,13 @@ local config = {
 	                          -- kept small on purpose: confines sorting to one room
 	                          -- so it won't courier items between rooms of a shared base
 	organize_cooldown = 6,    -- seconds between sort trips
+
+	-- Ground pickup. The golem also collects loose dropped items lying on the
+	-- floor nearby and carries them into a chest, instead of only reshuffling
+	-- items that are already inside chests. Checked before chest-to-chest
+	-- sorting on every work cycle, so litter gets priority over tidying.
+	pickup_enabled    = true,
+	pickup_radius     = 8,    -- nodes, how far it looks for dropped items (like chest_radius)
 	seek_recheck      = 3,    -- seconds between "is there work?" scans when idle
 	seek_timeout      = 22,   -- give up walking to a chest after this long
 	chest_dwell       = 0.6,  -- seconds spent at an open chest (lets the lid animation show)
@@ -464,6 +472,69 @@ local function plan_sort_job(chests, skip)
 					return { src = chest.pos, name = stack:get_name(), dest = h.chest.pos }
 				end
 			end
+		end
+	end
+	return nil
+end
+
+----------------------------------------
+-- B2b. Ground pickup (loose dropped items -> a chest)
+----------------------------------------
+--
+-- Dropped items are plain "__builtin:item" luaentities carrying an
+-- `itemstring` field. We don't touch anything else that might be flying
+-- around nearby (players, mobs, the golem's own held-item/lid cosmetics).
+local function is_dropped_item_entity(ent)
+	return ent ~= nil and ent.name == "__builtin:item"
+		and ent.itemstring and ent.itemstring ~= ""
+end
+
+-- Every loose item entity within `radius` nodes of `pos`.
+local function nearby_dropped_items(pos, radius)
+	local found = {}
+	for _, obj in ipairs(core.get_objects_inside_radius(pos, radius)) do
+		local ent = obj:get_luaentity()
+		if is_dropped_item_entity(ent) then
+			found[#found + 1] = obj
+		end
+	end
+	return found
+end
+
+-- Pick the closest reachable dropped item and a chest to carry it into (the
+-- chest already holding the most of that item, same "gather like with like"
+-- rule as the chest-to-chest sorter; falls back to any chest with room for a
+-- kind that isn't in a chest yet). Returns { obj = <object>, dest = <pos> },
+-- or nil if there's nothing to pick up right now.
+local function plan_pickup_job(chests, pos, skip)
+	if #chests == 0 then return nil end
+	local blocked = skip and function(p) return skip[core.hash_node_position(p)] end
+		or function() return false end
+
+	local items = nearby_dropped_items(pos, config.pickup_radius)
+	if #items == 0 then return nil end
+	table.sort(items, function(a, b)
+		return vector.distance(pos, a:get_pos()) < vector.distance(pos, b:get_pos())
+	end)
+
+	for _, obj in ipairs(items) do
+		local ent = obj:get_luaentity()
+		local stack = ItemStack(ent.itemstring)
+		local name  = stack:get_name()
+		if name ~= "" and core.registered_items[name] then
+			local dest, best_count = nil, -1
+			for _, chest in ipairs(chests) do
+				if not blocked(chest.pos) and chest.inv:room_for_item("main", stack) then
+					local n = 0
+					if is_mergeable(stack) then
+						for _, s in ipairs(chest.inv:get_list("main")) do
+							if s:get_name() == name then n = n + s:get_count() end
+						end
+					end
+					if n > best_count then best_count, dest = n, chest.pos end
+				end
+			end
+			if dest then return { obj = obj, dest = dest } end
 		end
 	end
 	return nil
@@ -1260,6 +1331,7 @@ local function update_movement(self, dtime)
 	if anchor then
 		close_chest_lid(self)
 		self._job = nil
+		self._pickup = nil                    -- drop any in-progress ground pickup
 		self._sort = nil                      -- drop any in-progress chest reorder
 		local pos = self.object:get_pos()
 		if pos and self._carry and not self._carry:is_empty() then
@@ -1316,6 +1388,17 @@ local function update_movement(self, dtime)
 			local pos    = self.object:get_pos()
 			local chests = pos and nearby_chests(pos, config.chest_radius) or {}
 			self._home   = chest_centroid(chests) or self._home or pos
+			-- Loose items on the floor take priority over reshuffling chests.
+			local pickup = config.pickup_enabled and pos
+				and plan_pickup_job(chests, pos, unreachable_set(self))
+			if pickup then
+				self._idle_streak = 0       -- there's work: snap back to attentive
+				self._pickup = pickup
+				self._mode = "to_item"
+				self._mode_timer = config.seek_timeout
+				set_anim(self, "walk")
+				return
+			end
 			local job    = plan_sort_job(chests, unreachable_set(self))
 			if job then
 				self._idle_streak = 0       -- there's work: snap back to attentive
@@ -1377,6 +1460,51 @@ local function update_movement(self, dtime)
 			-- Standing idle: rub off any residual velocity (e.g. punch knockback) so
 			-- the golem doesn't slide across the floor like it's on ice.
 			ground_friction(self, dtime)
+		end
+
+	elseif mode == "to_item" then
+		-- Walking to a loose item on the floor. Once close enough, pick it up and
+		-- hand off to "to_dest" (unchanged) to carry it into the chosen chest --
+		-- exactly like a chest-sourced stack, just picked up off the ground first.
+		local pos = self.object:get_pos()
+		local pk  = self._pickup
+		local obj = pk and pk.obj
+		local target = obj and obj:get_pos()
+		if not pos or not pk or not obj or not target or self._mode_timer <= 0 then
+			self._pickup = nil
+			self._organize_cool = 4
+			start_idle(self)
+			return
+		end
+		local dx, dz = target.x - pos.x, target.z - pos.z
+		if dx * dx + dz * dz <= 1.2 * 1.2 then
+			-- Arrived: scoop it up (re-read the entity in case it changed/merged
+			-- with another drop while we were walking over).
+			local ent = obj:get_luaentity()
+			local stack = (ent and ent.itemstring and ent.itemstring ~= "")
+				and ItemStack(ent.itemstring) or ItemStack("")
+			obj:remove()
+			self._pickup = nil
+			if stack:is_empty() then
+				self._organize_cool = 4
+				start_idle(self)
+			else
+				self._carry = stack
+				show_held(self, stack:get_name())
+				self._job = { dest = pk.dest } -- to_dest only ever reads job.dest
+				self._mode = "to_dest"
+				self._mode_timer = config.seek_timeout
+				face_pos(self, pk.dest)
+				set_anim(self, "walk")
+			end
+		elseif water_ahead(self) and not in_water(self) then
+			self._pickup = nil
+			self._organize_cool = 4
+			start_idle(self)
+		elseif follow_path(self, target, speed_factor, dtime) == "blocked" then
+			self._pickup = nil
+			self._organize_cool = 4
+			start_idle(self)
 		end
 
 	elseif mode == "to_source" then
@@ -1552,6 +1680,7 @@ local golem_def = {
 	_mode          = "idle",
 	_mode_timer    = 0,
 	_job           = nil, -- { src=<pos>, name=<item>, dest=<pos> } the current sort job
+	_pickup        = nil, -- { obj=<object>, dest=<pos> } the current ground-item job
 	_organize_cool = 0,
 	_anim          = nil,
 	_boost_timer   = 0,   -- seconds of post-lightning hyper-charge remaining
@@ -1622,6 +1751,7 @@ local golem_def = {
 		self._anim          = "stand"
 		self._mode          = "idle"
 		self._job           = nil
+		self._pickup        = nil
 		self._mode_timer    = 0
 		self._organize_cool = 3
 	end,
