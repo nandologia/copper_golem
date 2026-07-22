@@ -122,6 +122,7 @@ held-item hand offset (`HELD_OFFSET` / `HELD_ROT`).
 ## Credits & license
 
 - **Code + model:** © 2026 nando, **GPLv3** — see [`LICENSE.txt`](LICENSE.txt).
+- **Contributors:** ground-item pickup by [wrxxnch](https://github.com/wrxxnch) ([#1](https://github.com/nandologia/copper_golem/pull/1)).
 - **Textures:** **CC BY-SA 4.0**. The body atlases derive from Mineclonia's
   `mcl_copper` block textures by **NO11**, based on the **Pixel Perfection**
   pack by **XSSheep**. Full per-file breakdown in
